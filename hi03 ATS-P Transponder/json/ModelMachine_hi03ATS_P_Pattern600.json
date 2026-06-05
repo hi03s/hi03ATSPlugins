@@ -1,0 +1,19 @@
+{
+    "name": "hi03ATS_P_Pattern600",
+    "model": {
+        "modelFile": "hi03_ats_p/ATS_Antenna_P.mqo",
+        "textures": [
+            [ "mat1", "textures/hi03_ats_p/ATS_Antenna_P.png", "" ]
+        ],
+	"rendererPath": "scripts/hi03_ats_p/render_ATS_Beacon.js"
+    },
+    "buttonTexture": "textures/hi03_ats_p/button_hi03ATS_P_Pattern600.png",
+    "machineType": "Antenna_Send",
+    "rotateByMetadata": false,
+    "brightness": [ 0, 0 ],
+    "smoothing": true,
+    "doCulling": true,
+    "accuracy": "LOW",
+    "tags": "hi03 ats p",
+    "serverScriptPath": "scripts/hi03_ats_p/server_ATS_Beacon.js"
+}
