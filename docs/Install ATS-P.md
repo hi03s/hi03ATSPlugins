@@ -22,16 +22,18 @@ function init に以下のプログラムを記述します。必要に応じて
 function init(par1, par2) {
   // ⋮ 他のプログラムなど
 
-  ats_p_east = new ATS_P_East_State({
+  var atsOptions = {
     MaxBrakeNotch: -8, //非常ブレーキのノッチ
-    KeyMap:{           //キー設定
+    KeyMap: {          //キー設定
       optionKey: Keyboard.KEY_LCONTROL, //オプションキー
       atsButton: Keyboard.KEY_SPACE,    //ATS確認ボタン / [オプションキー同時押し]ATS警報持続ボタン
       disableButton: Keyboard.KEY_BACK, //ATS復帰ボタン / [オプションキー同時押し]ブレーキ開放ボタン
-      switchButton_p_east: Keyboard.KEY_1,  //[オプションキー同時押し]ATS切換ボタン (1～9推奨)
-      switchButton_off: Keyboard.KEY_0  //[オプションキー同時押し]ATS:OFFボタン (0推奨)
+      switchButton_off: Keyboard.KEY_0,    //[オプションキー同時押し]ATS:OFFボタン (0推奨)
+      switchButton_p_east: Keyboard.KEY_1    //[オプションキー同時押し]ATS切換ボタン (1～9推奨)
     }
-  });
+  }
+
+  ats_p_east = new ATS_P_East_State(atsOptions);
 
   // ⋮ 他のプログラムなど
 }
