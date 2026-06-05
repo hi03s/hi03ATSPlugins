@@ -1,0 +1,19 @@
+{
+    "name": "hi03ATS_Sx_Long",
+    "model": {
+        "modelFile": "hi03_ats_sx/ATS_Antenna_Sx.mqo",
+        "textures": [
+            [ "mat1", "textures/hi03_ats_sx/ATS_Antenna_Sx_W.png", "" ]
+        ],
+	"rendererPath": "scripts/hi03_ats_sx/render_ATS_Beacon.js"
+    },
+    "buttonTexture": "textures/hi03_ats_sx/button_hi03ATS_Sx_Long.png",
+    "machineType": "Antenna_Send",
+    "rotateByMetadata": false,
+    "brightness": [ 0, 0 ],
+    "smoothing": true,
+    "doCulling": true,
+    "accuracy": "LOW",
+    "tags": "hi03 ats sx",
+    "serverScriptPath": "scripts/hi03_ats_sx/server_ATS_Beacon.js"
+}
