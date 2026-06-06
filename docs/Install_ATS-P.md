@@ -6,12 +6,16 @@
 描画スクリプト、音声スクリプト、サーバースクリプトが導入済みである必要があります。いずれかのスクリプトがない場合は[スクリプト化スクリプト](https://drive.google.com/file/d/1_PacohCLTN1eceykNWCa1IIr4CL3siC5/view?usp=drive_link)をご利用ください。  
 
 # ● 導入方法
-## 1.ファイルをパックにコピーする
-Train scripts/scriptsにあるhi03_ATS_Plugins_v1.0フォルダーを、組み込みたいパックのscriptsフォルダにコピーします。  
+## 1.スクリプトをダウンロード
+[Download](https://drive.google.com/drive/folders/1Ftv9CaXNEGQdwqUMEZRu3wjXR-1p9VOu?usp=sharing)
+から車両組み込みスクリプト.zipをダウンロードし、適当な場所に解凍する。
+
+## 2.ファイルをパックにコピーする
+解凍したファイルにあるTrain scripts/scriptsにあるhi03_ATS_Plugins_v1.0フォルダーを、組み込みたいパックのscriptsフォルダにコピーします。  
 📁パック/assets/minecraft/scripts/hi03_ATS_Plugins_v1.0  
 というファイル構成になるよう配置してください。  
 
-## 2.描画スクリプトに組み込む
+## 3.描画スクリプトに組み込む
 描画スクリプトの文頭に以下のプログラムを記述します。すでに他のATSの設定がある場合は、ATS-Pの差分を追加してください。  
 ```javascript
 //include <scripts/hi03_ATS_Plugins_v1.0/lib_ATS_P_East_Render.js>
@@ -51,7 +55,7 @@ function render(entity, pass, par3) {
 }
 ```
 
-## 3.音声スクリプトに組み込む
+## 4.音声スクリプトに組み込む
 音声スクリプトの文頭に以下のプログラムを記述します。
 ```javascript
 //include <scripts/hi03_ATS_Plugins_v1.0/lib_ATS_P_East_Sound.js>
@@ -91,7 +95,7 @@ function onUpdate(su) {
 }
 ```
 
-## 4.サーバースクリプトに組み込む
+## 5.サーバースクリプトに組み込む
 サーバースクリプトの文頭に以下のプログラムを記述します。すでに他のATSの設定がある場合は、ATS-Pの差分を追加してください。
 ```javascript
 //include <scripts/hi03_ATS_Plugins_v1.0/lib_ATSSelector_Server.js>
@@ -124,7 +128,7 @@ function onUpdate(entity, scriptExecuter) {
 }
 ```
 
-## 5.カスタムボタンに組み込む
+## 6.カスタムボタンに組み込む
 車両のjsonにカスタムボタンの項目を追加します。すでに他の設定がある場合は、ATS-Pの差分を任意の位置に追加してください。  
 "ATS:OFF"は必ず配列内の先頭に記述してください。
 ```json
