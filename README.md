@@ -5,6 +5,7 @@
 ## 概要 / About
 ATS-Sx、ATS-Ps、ATS-Pの雰囲気を楽しめる地上子パックと車両スクリプトです。<br>
 地上子は信号機に対して動作するため、閉塞システムが必要になります。<br>
+ATSを動作させるためには車両にスクリプトを組み込む必要があります。<br>
 閉塞システムは[WebCTC](https://github.com/WebCTC/WebCTC)や[シグナルコントローラー](https://github.com/masa300/SignalControllerMod)、自作の回路等であらかじめ作成してください。<br>
 
 ## ダウンロード / Download
@@ -20,6 +21,9 @@ ATS-Sx、ATS-Ps、ATS-Pの雰囲気を楽しめる地上子パックと車両ス
 * [ATS-P/SW](docs/Install_ATS-P_SW.md)
 * [ATS-Ps](docs/Install_ATS-Ps.md)
 * [ATS-Sx](docs/Install_ATS-Sx.md)
+
+## ATS-P/Ps表示器/TIMSモニターを組み込む
+準備中
 
 ## RTMバージョン / RTM Version
 ### MC1.7.10
