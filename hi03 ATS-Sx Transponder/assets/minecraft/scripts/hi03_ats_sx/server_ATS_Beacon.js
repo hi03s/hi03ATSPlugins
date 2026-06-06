@@ -127,7 +127,7 @@ function onUpdate(entity, scriptExecuter) {
             if (Options.speed.indexOf(modelName) !== -1) limitSpeed = settings.speed;
             if (Options.time.indexOf(modelName) !== -1) time = settings.time ? settings.time : 90;
             if (settings.branchPos !== undefined) branchPos = settings.branchPos;
-            if (settings.dir !== undefined) dir = settings.dir;
+            if (settings.dir !== undefined) branchDir = settings.dir;
 
             //送信情報
             var trainSpeed = collideTrain.getSpeed() * 72;//[km/h]

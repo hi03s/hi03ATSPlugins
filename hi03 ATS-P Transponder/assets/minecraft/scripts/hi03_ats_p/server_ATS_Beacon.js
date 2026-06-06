@@ -166,7 +166,7 @@ function onUpdate(entity, scriptExecuter) {
             if (settings.distance !== undefined) distance = settings.distance;
             if (settings.length !== undefined) length = settings.length;
             if (settings.branchPos !== undefined) branchPos = settings.branchPos;
-            if (settings.dir !== undefined) dir = settings.dir;
+            if (settings.dir !== undefined) branchDir = settings.dir;
 
             //送信情報
             var sendData = getSendData(world, modelName, signalLevel, limitSpeed, branchPos, branchDir, distance, id, length);
