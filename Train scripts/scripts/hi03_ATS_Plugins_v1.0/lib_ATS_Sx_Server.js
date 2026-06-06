@@ -5,6 +5,12 @@
 //#################################
 function operationATS_Sx(entity, currentATSType, options) {
     if (!entity) return;
+    if (!options) options = {
+        MaxBrakeNotch: -8,
+        BrakeDeceleration: -2.5,
+        MaxSpeed: 130,
+        IsOldType: false
+    }
 
     //##  オプション  ##
     //非常ブレーキのノッチ
@@ -174,7 +180,7 @@ function operationATS_Sx(entity, currentATSType, options) {
     var dataMap = entity.getResourceState().getDataMap();
 
     if (ats_id !== currentATSType) {
-        _ats.off(entity);
+        _ats.off(entity, currentATSType, options);
         _fx.setIntSync(dataMap, ats_id + "_lastTick", 0);
         _fx.setBooleanSync(dataMap, ats_id + "_isInitialize", false);
         _fx.setStringSync(dataMap, ats_id + "_ATSState", "");
@@ -195,7 +201,7 @@ function operationATS_Sx(entity, currentATSType, options) {
     }
     if (isInitialize) {
         if ((worldTick - lastTick) < _ats.resetTime) {//初期化中
-            _ats.reset(entity);
+            _ats.reset(entity, options);
         }
         else {//初期化完了
             _fx.setBooleanSync(dataMap, ats_id + "_isInitialize", false);
@@ -209,7 +215,7 @@ function operationATS_Sx(entity, currentATSType, options) {
         else atsState = JSON.parse(operationATS_Sx._ats.atsState);
 
         //atsState更新
-        atsState = _ats.onUpdate(entity, atsState);
+        atsState = _ats.onUpdate(entity, atsState, options);
 
         //データ受信
         var receiveDataJson = dataMap.getString("ATSDataReceive").replace(/☆/g, ",");
@@ -223,13 +229,13 @@ function operationATS_Sx(entity, currentATSType, options) {
                     isFault: true
                 };
             }
-            atsState = _ats.receiveData(entity, atsState, receiveData);
+            atsState = _ats.receiveData(entity, atsState, receiveData, options);
             //受信データ消去
             dataMap.setString("ATSDataReceive", "", 1);
         }
 
         //動作処理
-        atsState = _ats.operation(entity, atsState);
+        atsState = _ats.operation(entity, atsState, options);
 
         //保存
         var saveDataJson = JSON.stringify(atsState).replace(/,/g, "☆");

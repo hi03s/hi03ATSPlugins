@@ -1,4 +1,4 @@
-//#################################
+﻿//#################################
 //##                             ##
 //##  hi03 ATS-Psプラグイン v1.0  ##
 //##                             ##
@@ -10,56 +10,14 @@
 */
 
 var ATS_Ps_SoundManager = new java.util.WeakHashMap();
-function operationATS_Ps(su) {
-
-    //#####################
-    //###  ユーザー設定  ###
-    //#####################
-    var soundList = {
-        //パターン発生
-        patternStart: "sound_hi03nex_ps:patternStart",
-
-        //パターン終了
-        patternEnd: "sound_hi03nex_ps:patternEnd",
-
-        //パターン接近(ON)
-        patternApproaching1: "sound_hi03nex_ps:psChime1",
-
-        //パターン接近(OFF)
-        patternApproaching2: "sound_hi03nex_ps:psChime1",
-
-        //パターン抵触
-        patternApproaching3: "sound_hi03nex_ps:psChime1",
-
-        //ATS確認ボタン押下
-        pushButton1: "sound_hi03nex_ps:pushButton",
-
-        //ATS警報持続ボタン押下
-        pushButton2: "sound_hi03nex_ps:pushButton"
-    };
-    var loopSoundList = {
-        //ATSブレーキ:直下地上子 [ループ音]
-        atsBrake1: "sound_hi03nex_ps:bell2",
-
-        //ATSブレーキ:パターン抵触 [ループ音]
-        atsBrake2: "sound_hi03nex_ps:bell2",
-
-        //ATSブレーキ:Sn未確認 [ループ音]
-        atsBrake3: "sound_hi03nex_ps:bell2",
-
-        //ATSブレーキ:後退検知 [ループ音]
-        atsBrake4: "sound_hi03nex_ps:bell2",
-
-        //ATS警報ベル(ジリジリ) [ループ音]
-        alert1: "sound_hi03nex_ps:bell2",
-
-        //ATS警報持続(キンコン) [ループ音]
-        alert2: "sound_hi03nex_ps:bell3"
-    };
-
-    //#####################
-    //###  ユーザー設定  ###
-    //#####################
+function operationATS_Ps(su, settings) {
+    if (!settings) settings = {
+        soundList: {},
+        loopSoundList: {}
+    }
+    var ats_id = "ATS-Ps";
+    var soundList = settings.soundList;
+    var loopSoundList = settings.loopSoundList;
 
     var entity = su.getEntity();
     if (!entity) return;
@@ -82,7 +40,7 @@ function operationATS_Ps(su) {
             isPatternBrake: dm.getBoolean("ATS-Ps_isPatternBrake"),         //ATSブレーキ:パターン抵触
             isATSLongBrake: dm.getBoolean("ATS-Ps_isATSLongBrake"),         //ATSブレーキ:Sn未確認
             isRollbackBrake: dm.getBoolean("ATS-Ps_isRollbackBrake"),       //ATSブレーキ:後退検知
-            patternSpeed: dm.getDouble("ATS-Ps_PatternSpeed"),              //パターン速度
+            patternSpeed: dm.getDouble("ATS-Ps_patternSpeed"),              //パターン速度
             isPatternApproaching: dm.getBoolean("ATS-Ps_patternAlert"),     //パターン接近
             isLongAlert: dm.getBoolean("ATS-Ps_isLongAlert"),               //ATS警報ベル(ジリジリ)
             isAtsFault: dm.getBoolean("ATS-Ps_isAtsFault"),                 //Ps故障
@@ -122,8 +80,8 @@ function operationATS_Ps(su) {
     }
 
     //再生終了(ATS切り替え)
-    var isSoundReset = dataMap.getBoolean("ATS-Ps_isSoundReset");
-    if (atsType !== "ATS-Ps") {
+    var isSoundReset = dataMap.getBoolean(ats_id + "_isSoundReset");
+    if (atsType !== ats_id) {
         if (!isSoundReset) {
             //再生停止(非ループ)
             for (var i = 0; i < soundListKeys.length; i++) {
@@ -138,37 +96,37 @@ function operationATS_Ps(su) {
                 su.stopSound(sound[0], sound[1]);
             }
 
-            dataMap.setBoolean("ATS-Ps_isSoundReset", true, 0);
+            dataMap.setBoolean(ats_id + "_isSoundReset", true, 0);
         }
         return;
     }
-    else if (isSoundReset) dataMap.setBoolean("ATS-Ps_isSoundReset", false, 0);
+    else if (isSoundReset) dataMap.setBoolean(ats_id + "_isSoundReset", false, 0);
 
     //再生条件
 
     //パターン発生
-    isPlayingSound[soundList.patternStart].push(state.hasPattern);
+    isPlayingSound[soundList.patternPsStart].push(state.hasPattern);
     //パターン終了
-    isPlayingSound[soundList.patternEnd].push(!state.hasPattern);
+    isPlayingSound[soundList.patternPsEnd].push(!state.hasPattern);
     //パターン接近(ON)
-    isPlayingSound[soundList.patternApproaching1].push(state.isPatternApproaching);
+    isPlayingSound[soundList.patternPsApproachingOn].push(state.isPatternApproaching);
     //パターン接近(OFF)
-    isPlayingSound[soundList.patternApproaching2].push(!state.isPatternApproaching);
+    isPlayingSound[soundList.patternPsApproachingOff].push(!state.isPatternApproaching);
     //パターン抵触
-    isPlayingSound[soundList.patternApproaching3].push(state.isPatternBrake);
+    isPlayingSound[soundList.patternPsOver].push(state.isPatternBrake);
     //ATS確認ボタン押下
     isPlayingSound[soundList.pushButton1].push(state.isAlertButton1Pressed);
     //ATS警報持続ボタン押下
     isPlayingSound[soundList.pushButton2].push(state.isAlertButton2Pressed);
 
     //ATSブレーキ:直下地上子 [ループ音]
-    isPlayingSound[loopSoundList.atsBrake1].push(state.isATSBrake);
+    isPlayingSound[loopSoundList.atsPsBrakeDirect].push(state.isATSBrake);
     //ATSブレーキ:パターン抵触 [ループ音]
-    isPlayingSound[loopSoundList.atsBrake2].push(state.isPatternBrake);
+    isPlayingSound[loopSoundList.atsPsBrakePattern].push(state.isPatternBrake);
     //ATSブレーキ:Sn未確認 [ループ音]
-    isPlayingSound[loopSoundList.atsBrake3].push(state.isATSLongBrake);
+    isPlayingSound[loopSoundList.atsPsBrakeLong].push(state.isATSLongBrake);
     //ATSブレーキ:後退検知 [ループ音]
-    isPlayingSound[loopSoundList.atsBrake4].push(state.isRollbackBrake);
+    isPlayingSound[loopSoundList.atsPsBrakeRollback].push(state.isRollbackBrake);
     //ATS警報ベル(ジリジリ) [ループ音]
     isPlayingSound[loopSoundList.alert1].push(state.isLongAlert || state.isInitialize);
     //ATS警報持続(キンコン) [ループ音]
@@ -177,6 +135,7 @@ function operationATS_Ps(su) {
     //再生(非ループ)
     for (var i = 0; i < soundListKeys.length; i++) {
         var soundName = soundList[soundListKeys[i]];
+        if (!soundName) continue;
         if (shouldPlaySound(isPlayingSound[soundName], prevPlayingSound[soundName])) {
             var sound = soundName.split(":");
             su.stopSound(sound[0], sound[1]);
@@ -186,6 +145,7 @@ function operationATS_Ps(su) {
     //再生(ループ)
     for (var i = 0; i < loopSoundListKeys.length; i++) {
         var soundName = loopSoundList[loopSoundListKeys[i]];
+        if (!soundName) continue;
         var sound = soundName.split(":");
         if (anyPlaySound(isPlayingSound[soundName])) su.playSound(sound[0], sound[1], 1, 1, true);
         else su.stopSound(sound[0], sound[1]);

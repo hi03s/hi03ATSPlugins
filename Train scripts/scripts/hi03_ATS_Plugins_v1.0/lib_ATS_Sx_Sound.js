@@ -10,35 +10,14 @@
 */
 
 var ATS_Sx_SoundManager = new java.util.WeakHashMap();
-function operationATS_Sx(su) {
-
-    //#####################
-    //###  ユーザー設定  ###
-    //#####################
-    var soundList = {
-        //ATS確認ボタン押下
-        pushButton1: "sound_hi03nex_ps:pushButton",
-
-        //ATS警報持続ボタン押下
-        pushButton2: "sound_hi03nex_ps:pushButton"
-    };
-    var loopSoundList = {
-        //ATSブレーキ:直下地上子 [ループ音]
-        atsBrake1: "sound_hi03nex_ps:bell2",
-
-        //ATSブレーキ:Sx未確認 [ループ音]
-        atsBrake3: "sound_hi03nex_ps:bell2",
-
-        //ATS警報ベル(ジリジリ) [ループ音]
-        alert1: "sound_hi03nex_ps:bell2",
-
-        //ATS警報持続(キンコン) [ループ音]
-        alert2: "sound_hi03nex_ps:bell3"
-    };
-
-    //#####################
-    //###  ユーザー設定  ###
-    //#####################
+function operationATS_Sx(su, settings) {
+    if (!settings) settings = {
+        soundList: {},
+        loopSoundList: {}
+    }
+    var ats_id = "ATS-Sx";
+    var soundList = settings.soundList;
+    var loopSoundList = settings.loopSoundList;
 
     var entity = su.getEntity();
     if (!entity) return;
@@ -95,8 +74,8 @@ function operationATS_Sx(su) {
     }
 
     //再生終了
-    var isSoundReset = dataMap.getBoolean("ATS-Sx_isSoundReset");
-    if (atsType !== "ATS-Sx") {
+    var isSoundReset = dataMap.getBoolean(ats_id + "_isSoundReset");
+    if (atsType !== ats_id) {
         if (!isSoundReset) {
             //再生停止(非ループ)
             for (var i = 0; i < soundListKeys.length; i++) {
@@ -111,23 +90,22 @@ function operationATS_Sx(su) {
                 su.stopSound(sound[0], sound[1]);
             }
 
-            dataMap.setBoolean("ATS-Sx_isSoundReset", true, 0);
+            dataMap.setBoolean(ats_id + "_isSoundReset", true, 0);
         }
         return;
     }
-    else if (isSoundReset) dataMap.setBoolean("ATS-Sx_isSoundReset", false, 0);
+    else if (isSoundReset) dataMap.setBoolean(ats_id + "_isSoundReset", false, 0);
 
     //再生条件
-
     //ATS確認ボタン押下
     isPlayingSound[soundList.pushButton1].push(state.isAlertButton1Pressed);
     //ATS警報持続ボタン押下
     isPlayingSound[soundList.pushButton2].push(state.isAlertButton2Pressed);
 
     //ATSブレーキ:直下地上子 [ループ音]
-    isPlayingSound[loopSoundList.atsBrake1].push(state.isATSBrake);
+    isPlayingSound[loopSoundList.atsBrakeDirect].push(state.isATSBrake);
     //ATSブレーキ:Sx未確認 [ループ音]
-    isPlayingSound[loopSoundList.atsBrake3].push(state.isATSLongBrake);
+    isPlayingSound[loopSoundList.atsBrakeLong].push(state.isATSLongBrake);
     //ATS警報ベル(ジリジリ) [ループ音]
     isPlayingSound[loopSoundList.alert1].push(state.isLongAlert || state.isInitialize);
     //ATS警報持続(キンコン) [ループ音]
@@ -136,6 +114,7 @@ function operationATS_Sx(su) {
     //再生(非ループ)
     for (var i = 0; i < soundListKeys.length; i++) {
         var soundName = soundList[soundListKeys[i]];
+        if (!soundName) continue;
         if (shouldPlaySound(isPlayingSound[soundName], prevPlayingSound[soundName])) {
             var sound = soundName.split(":");
             su.stopSound(sound[0], sound[1]);
@@ -145,6 +124,7 @@ function operationATS_Sx(su) {
     //再生(ループ)
     for (var i = 0; i < loopSoundListKeys.length; i++) {
         var soundName = loopSoundList[loopSoundListKeys[i]];
+        if (!soundName) continue;
         var sound = soundName.split(":");
         if (anyPlaySound(isPlayingSound[soundName])) su.playSound(sound[0], sound[1], 1, 1, true);
         else su.stopSound(sound[0], sound[1]);

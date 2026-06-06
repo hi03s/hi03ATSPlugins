@@ -1,61 +1,17 @@
-//#################################
+﻿//#################################
 //##                             ##
 //##  hi03 ATS-Pプラグイン v1.0   ##
 //##                             ##
 //#################################
-/*
-1.この関数を音声スクリプトにコピーします
-2.onUpdate(su) の中に operationATS_P_East(su); を記述します
-3.ユーザー設定で再生する音声の割当を設定します
-*/
-
 var ATS_P_East_SoundManager = new java.util.WeakHashMap();
-function operationATS_P_East(su) {
-
+function operationATS_P_East(su, settings) {
+    if (!settings) settings = {
+        soundList: {},
+        loopSoundList: {}
+    }
     var ats_id = "ATS-P_East";
-
-    //#####################
-    //###  ユーザー設定  ###
-    //#####################
-    var soundList = {
-        //パターン接近
-        patternApproaching1: "sound_hi03nex_ps:bell1",
-
-        //パターン抵触
-        patternApproaching2: "sound_hi03nex_ps:bell1",
-
-        //ATS確認ボタン押下
-        pushButton1: "sound_hi03nex_ps:pushButton",
-
-        //ATS警報持続ボタン押下
-        pushButton2: "sound_hi03nex_ps:pushButton",
-
-        //初期化完了
-        initialize: "sound_hi03nex_ps:bell1",
-
-        //ATS-P有効化
-        atspActivate: "sound_hi03nex_ps:bell1",
-
-        //ATS-P切り替え(東→西)
-        switchToWest: "sound_hi03nex_ps:bell1",
-
-        //ATS-P切り替え(西→東)
-        switchToEast: "sound_hi03nex_ps:bell1"
-    };
-    var loopSoundList = {
-        //ATS非常ブレーキ動作 [ループ音]
-        atsBrake1: "sound_hi03nex_ps:ATSPAnnounce",
-
-        //ATS警報ベル(ジリジリ) [ループ音]
-        alert1: "sound_hi03nex_ps:bell2",
-
-        //ATS警報持続(キンコン) [ループ音]
-        alert2: "sound_hi03nex_ps:bell3"
-    };
-
-    //#####################
-    //###  ユーザー設定  ###
-    //#####################
+    var soundList = settings.soundList;
+    var loopSoundList = settings.loopSoundList;
 
     var entity = su.getEntity();
     if (!entity) return;
@@ -79,7 +35,7 @@ function operationATS_P_East(su) {
             isPatternBrakeFull : dm.getBoolean("ATS-P_East_isPatternBrakeFull"),//ATSブレーキ:パターン抵触
             isATSLongBrake: dm.getBoolean("ATS-P_East_isATSLongBrake"),         //ATSブレーキ:Sn未確認
             isRollbackBrake: dm.getBoolean("ATS-P_East_isRollbackBrake"),       //ATSブレーキ:後退検知
-            patternSpeed: dm.getDouble("ATS-P_East_PatternSpeed"),              //パターン速度
+            patternSpeed: dm.getDouble("ATS-P_East_patternSpeed"),              //パターン速度
             isPatternApproaching: dm.getBoolean("ATS-P_East_patternAlert"),     //パターン接近
             isLongAlert: dm.getBoolean("ATS-P_East_isLongAlert"),               //ATS警報ベル(ジリジリ)
             isAtsFault: dm.getBoolean("ATS-P_East_isAtsFault"),                 //Ps故障
@@ -144,13 +100,14 @@ function operationATS_P_East(su) {
 
     //再生条件
 
-    //パターン接近
-    isPlayingSound[soundList.patternApproaching1].push(state.isPatternApproaching);
-    isPlayingSound[soundList.patternApproaching1].push(!state.isPatternApproaching);
-    //パターン抵触
+    //パターン接近ON(ATS-P)
+    isPlayingSound[soundList.patternPApproachingOn].push(state.isPatternApproaching);
+    //パターン接近OFF(ATS-P)
+    isPlayingSound[soundList.patternPApproachingOff].push(!state.isPatternApproaching);
+    //パターン抵触(ATS-P)
     var isPattern = state.isATSBrake || state.isPatternBrake || state.isPatternBrakeFull;
-    isPlayingSound[soundList.patternApproaching2].push(isPattern);
-    isPlayingSound[soundList.patternApproaching2].push(!isPattern);
+    isPlayingSound[soundList.patternPOver].push(isPattern);
+    isPlayingSound[soundList.patternPOver].push(!isPattern);
     //ATS確認ボタン押下
     isPlayingSound[soundList.pushButton1].push(state.isAlertButton1Pressed);
     //ATS警報持続ボタン押下
@@ -158,8 +115,8 @@ function operationATS_P_East(su) {
     //初期化終了
     isPlayingSound[soundList.initialize].push(!state.isInitialize);
     //ATS-P有効化
-    isPlayingSound[soundList.atspActivate].push(state.isActiveATSP);
-    isPlayingSound[soundList.atspActivate].push(!state.isActiveATSP);
+    isPlayingSound[soundList.atsPActivate].push(state.isActiveATSP);
+    isPlayingSound[soundList.atsPActivate].push(!state.isActiveATSP);
     //ATS-P切り替え(東→西)
     isPlayingSound[soundList.switchToWest].push(state.atspMode === "West");
     //ATS-P切り替え(西→東)
@@ -167,7 +124,7 @@ function operationATS_P_East(su) {
 
     //ATSブレーキ動作 [ループ音]
     var isATSBrake = state.isATSBrake || state.isATSLongBrake || state.isRollbackBrake || state.isATSPBrake;
-    isPlayingSound[loopSoundList.atsBrake1].push(isATSBrake);
+    isPlayingSound[loopSoundList.atsPBrake].push(isATSBrake);
     //ATS警報ベル(ジリジリ) [ループ音]
     isPlayingSound[loopSoundList.alert1].push(state.isLongAlert || state.isInitialize);
     //ATS警報持続(キンコン) [ループ音]
@@ -176,6 +133,7 @@ function operationATS_P_East(su) {
     //再生(非ループ)
     for (var i = 0; i < soundListKeys.length; i++) {
         var soundName = soundList[soundListKeys[i]];
+        if (!soundName) continue;
         if (shouldPlaySound(isPlayingSound[soundName], prevPlayingSound[soundName])) {
             var sound = soundName.split(":");
             su.stopSound(sound[0], sound[1]);
@@ -185,6 +143,7 @@ function operationATS_P_East(su) {
     //再生(ループ)
     for (var i = 0; i < loopSoundListKeys.length; i++) {
         var soundName = loopSoundList[loopSoundListKeys[i]];
+        if (!soundName) continue;
         var sound = soundName.split(":");
         if (anyPlaySound(isPlayingSound[soundName])) su.playSound(sound[0], sound[1], 1, 1, true);
         else su.stopSound(sound[0], sound[1]);

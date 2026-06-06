@@ -1,4 +1,4 @@
-//#####################################
+﻿//#####################################
 //##                                 ##
 //##  hi03 ATS-P・Psプラグイン v1.0   ##
 //##                                 ##
@@ -10,82 +10,14 @@
 */
 
 var ATS_P_Ps_SoundManager = new java.util.WeakHashMap();
-function operationATS_P_Ps(su) {
-
+function operationATS_P_Ps(su, settings) {
+    if (!settings) settings = {
+        soundList: {},
+        loopSoundList: {}
+    }
     var ats_id = "ATS-P_Ps";
-
-    //#####################
-    //###  ユーザー設定  ###
-    //#####################
-    var soundList = {
-        //パターン発生(ATS-Ps)
-        patternStartPs: "sound_hi03nex_ps:patternStart",
-
-        //パターン終了(ATS-Ps)
-        patternEndPs: "sound_hi03nex_ps:patternEnd",
-
-        //パターン接近ON(ATS-Ps)
-        patternApproaching1Ps: "sound_hi03nex_ps:psChime1",
-
-        //パターン接近OFF(ATS-Ps)
-        patternApproaching2Ps: "sound_hi03nex_ps:psChime1",
-
-        //パターン抵触(ATS-Ps)
-        patternApproaching3Ps: "sound_hi03nex_ps:psChime1",
-
-        //パターン接近ON(ATS-P)
-        patternApproaching1: "sound_hi03nex_ps:bell1",
-
-        //パターン接近OFF(ATS-P)
-        patternApproaching2: "sound_hi03nex_ps:bell1",
-
-        //パターン抵触(ATS-P)
-        patternApproaching3: "sound_hi03nex_ps:bell1",
-
-        //ATS確認ボタン押下
-        pushButton1: "sound_hi03nex_ps:pushButton",
-
-        //ATS警報持続ボタン押下
-        pushButton2: "sound_hi03nex_ps:pushButton",
-
-        //初期化完了
-        initialize: "sound_hi03nex_ps:bell1",
-
-        //ATS-P有効化
-        atspActivate: "sound_hi03nex_ps:bell1",
-
-        //ATS-P切り替え(東→西)
-        switchToWest: "sound_hi03nex_ps:bell1",
-
-        //ATS-P切り替え(西→東)
-        switchToEast: "sound_hi03nex_ps:bell1"
-    };
-    var loopSoundList = {
-        //ATS非常ブレーキ(ATS-Ps):直下地上子 [ループ音]
-        atsBrake1Ps: "sound_hi03nex_ps:bell2",
-
-        //ATS非常ブレーキ(ATS-Ps):パターン抵触 [ループ音]
-        atsBrake2Ps: "sound_hi03nex_ps:bell2",
-
-        //ATS非常ブレーキ(ATS-Ps):Sn未確認 [ループ音]
-        atsBrake3Ps: "sound_hi03nex_ps:bell2",
-
-        //ATS非常ブレーキ(ATS-Ps):後退検知 [ループ音]
-        atsBrake4Ps: "sound_hi03nex_ps:bell2",
-
-        //ATS-P非常ブレーキ動作 [ループ音]
-        atsBrake1: "sound_hi03nex_ps:ATSPAnnounce",
-
-        //ATS警報ベル(ジリジリ) [ループ音]
-        alert1: "sound_hi03nex_ps:bell2",
-
-        //ATS警報持続(キンコン) [ループ音]
-        alert2: "sound_hi03nex_ps:bell3"
-    };
-
-    //#####################
-    //###  ユーザー設定  ###
-    //#####################
+    var soundList = settings.soundList;
+    var loopSoundList = settings.loopSoundList;
 
     var entity = su.getEntity();
     if (!entity) return;
@@ -116,7 +48,7 @@ function operationATS_P_Ps(su) {
             isPatternBrakePs: dm.getBoolean("ATS-P_Ps_isPatternBrake_Ps"),    //ATS非常ブレーキ:パターン抵触(ATS-Ps)
             hasPatternPs: dm.getBoolean("ATS-P_Ps_hasPattern_Ps"),            //パターン発生(ATS-Ps)
             isPatternApproachingPs: dm.getBoolean("ATS-P_Ps_patternAlert_Ps"),//パターン接近(ATS-Ps)
-            patternSpeedPs: dm.getDouble("ATS-P_Ps_PatternSpeed_Ps"),         //パターン速度(ATS-Ps)
+            patternSpeedPs: dm.getDouble("ATS-P_Ps_patternSpeed_Ps"),         //パターン速度(ATS-Ps)
             isActiveATSP: dm.getBoolean("ATS-P_Ps_isActiveATSP"),             //ATS-P有効化
             isATSPBrake: dm.getBoolean("ATS-P_Ps_isATSPBrake"),               //ATS-P非常ブレーキ:直下地上子(ATS-P)
             isRollbackBrake: dm.getBoolean("ATS-P_Ps_isRollbackBrake"),       //ATS-P非常ブレーキ:後退検知(ATS-P)
@@ -124,7 +56,7 @@ function operationATS_P_Ps(su) {
             isPatternBrakeFull: dm.getBoolean("ATS-P_Ps_isPatternBrakeFull"), //ATS-P常用ブレーキ:パターン抵触(ATS-P)
             atspMode: dm.getString("ATS-P_Ps_ATSPMode"),                      //ATS-Pモード(東:"East", 西:"West")
             isPatternApproaching: dm.getBoolean("ATS-P_Ps_patternAlert"),     //パターン接近(ATS-P)
-            patternSpeed: dm.getDouble("ATS-P_Ps_PatternSpeed")               //パターン速度(ATS-P)
+            patternSpeed: dm.getDouble("ATS-P_Ps_patternSpeed")               //パターン速度(ATS-P)
         }
     }();
     var shouldPlaySound = function (flags, prevFlags) {
@@ -179,13 +111,13 @@ function operationATS_P_Ps(su) {
     //再生条件
 
     //パターン接近ON(ATS-P)
-    isPlayingSound[soundList.patternApproaching1].push(state.isPatternApproaching);
+    isPlayingSound[soundList.patternPApproachingOn].push(state.isPatternApproaching);
     //パターン接近OFF(ATS-P)
-    isPlayingSound[soundList.patternApproaching2].push(!state.isPatternApproaching);
+    isPlayingSound[soundList.patternPApproachingOff].push(!state.isPatternApproaching);
     //パターン抵触(ATS-P)
     var isPattern = state.isATSBrake || state.isPatternBrake || state.isPatternBrakeFull;
-    isPlayingSound[soundList.patternApproaching3].push(isPattern);
-    isPlayingSound[soundList.patternApproaching3].push(!isPattern);
+    isPlayingSound[soundList.patternPOver].push(isPattern);
+    isPlayingSound[soundList.patternPOver].push(!isPattern);
     //ATS確認ボタン押下
     isPlayingSound[soundList.pushButton1].push(state.isAlertButton1Pressed);
     //ATS警報持続ボタン押下
@@ -193,34 +125,34 @@ function operationATS_P_Ps(su) {
     //初期化終了
     isPlayingSound[soundList.initialize].push(!state.isInitialize);
     //ATS-P有効化
-    isPlayingSound[soundList.atspActivate].push(state.isActiveATSP);
-    isPlayingSound[soundList.atspActivate].push(!state.isActiveATSP);
+    isPlayingSound[soundList.atsPActivate].push(state.isActiveATSP);
+    isPlayingSound[soundList.atsPActivate].push(!state.isActiveATSP);
     //ATS-P切り替え(東→西)
     isPlayingSound[soundList.switchToWest].push(state.atspMode === "West");
     //ATS-P切り替え(西→東)
     isPlayingSound[soundList.switchToEast].push(state.atspMode === "East");
     //パターン発生(ATS-Ps)
-    isPlayingSound[soundList.patternStartPs].push(state.hasPatternPs);
+    isPlayingSound[soundList.patternPsStart].push(state.hasPatternPs);
     //パターン終了(ATS-Ps)
-    isPlayingSound[soundList.patternEndPs].push(!state.hasPatternPs);
+    isPlayingSound[soundList.patternPsEnd].push(!state.hasPatternPs);
     //パターン接近ON(ATS-Ps)
-    isPlayingSound[soundList.patternApproaching1Ps].push(state.isPatternApproachingPs);
+    isPlayingSound[soundList.patternPsApproachingOn].push(state.isPatternApproachingPs);
     //パターン接近OFF(ATS-Ps)
-    isPlayingSound[soundList.patternApproaching2Ps].push(!state.isPatternApproachingPs);
+    isPlayingSound[soundList.patternPsApproachingOff].push(!state.isPatternApproachingPs);
     //パターン抵触(ATS-Ps)
-    isPlayingSound[soundList.patternApproaching3Ps].push(state.isPatternBrakePs);
+    isPlayingSound[soundList.patternPsOver].push(state.isPatternBrakePs);
 
     //ATS非常ブレーキ(ATS-Ps):直下地上子 [ループ音]
-    isPlayingSound[loopSoundList.atsBrake1Ps].push(!state.isActiveATSP && state.isATSBrake);
+    isPlayingSound[loopSoundList.atsPsBrakeDirect].push(!state.isActiveATSP && state.isATSBrake);
     //ATS非常ブレーキ(ATS-Ps):パターン抵触 [ループ音]
-    isPlayingSound[loopSoundList.atsBrake2Ps].push(!state.isActiveATSP && state.isPatternBrakePs);
+    isPlayingSound[loopSoundList.atsPsBrakePattern].push(!state.isActiveATSP && state.isPatternBrakePs);
     //ATS非常ブレーキ(ATS-Ps):Sn未確認 [ループ音]
-    isPlayingSound[loopSoundList.atsBrake3Ps].push(!state.isActiveATSP && state.isATSLongBrake);
+    isPlayingSound[loopSoundList.atsPsBrakeLong].push(!state.isActiveATSP && state.isATSLongBrake);
     //ATS非常ブレーキ(ATS-Ps):後退検知 [ループ音]
-    isPlayingSound[loopSoundList.atsBrake4Ps].push(state.isRollbackBrake);
+    isPlayingSound[loopSoundList.atsPsBrakeRollback].push(state.isRollbackBrake);
     //ATS-P非常ブレーキ動作 [ループ音]
     var isATSBrake = state.isATSBrake || state.isATSLongBrake || state.isATSPBrake;
-    isPlayingSound[loopSoundList.atsBrake1].push(state.isActiveATSP && isATSBrake);
+    isPlayingSound[loopSoundList.atsPBrake].push(state.isActiveATSP && isATSBrake);
     //ATS警報ベル(ジリジリ) [ループ音]
     isPlayingSound[loopSoundList.alert1].push(state.isLongAlert || state.isInitialize);
     //ATS警報持続(キンコン) [ループ音]
@@ -229,6 +161,7 @@ function operationATS_P_Ps(su) {
     //再生(非ループ)
     for (var i = 0; i < soundListKeys.length; i++) {
         var soundName = soundList[soundListKeys[i]];
+        if (!soundName) continue;
         if (shouldPlaySound(isPlayingSound[soundName], prevPlayingSound[soundName])) {
             var sound = soundName.split(":");
             su.stopSound(sound[0], sound[1]);
@@ -238,6 +171,7 @@ function operationATS_P_Ps(su) {
     //再生(ループ)
     for (var i = 0; i < loopSoundListKeys.length; i++) {
         var soundName = loopSoundList[loopSoundListKeys[i]];
+        if (!soundName) continue;
         var sound = soundName.split(":");
         if (anyPlaySound(isPlayingSound[soundName])) su.playSound(sound[0], sound[1], 1, 1, true);
         else su.stopSound(sound[0], sound[1]);

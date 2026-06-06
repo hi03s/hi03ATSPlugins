@@ -1,4 +1,4 @@
-//#################################
+﻿//#################################
 //##                             ##
 //##  hi03 ATS-Psプラグイン v1.0  ##
 //##                             ##
@@ -43,8 +43,8 @@ var ATS_Ps_State = function (options) {
         meter2: renderer.registerParts(new Parts("ATS-Ps_meter2"))
     }
 }
-ATS_Ps_Display.prototype = {
-    constructor: ATS_Ps_Display,
+ATS_Ps_State.prototype = {
+    constructor: ATS_Ps_State,
     onUpdate: function (entity, pass) {
         var ats_id = "ATS-Ps";
 
@@ -136,7 +136,7 @@ ATS_Ps_Display.prototype = {
             isPatternBrake: dm.getBoolean("ATS-Ps_isPatternBrake"),         //ATSブレーキ:パターン抵触
             isATSLongBrake: dm.getBoolean("ATS-Ps_isATSLongBrake"),         //ATSブレーキ:Sn未確認
             isRollbackBrake: dm.getBoolean("ATS-Ps_isRollbackBrake"),       //ATSブレーキ:後退検知
-            patternSpeed: dm.getDouble("ATS-Ps_PatternSpeed"),              //パターン速度
+            patternSpeed: dm.getDouble("ATS-Ps_patternSpeed"),              //パターン速度
             isPatternApproaching: dm.getBoolean("ATS-Ps_patternAlert"),     //パターン接近
             isLongAlert: dm.getBoolean("ATS-Ps_isLongAlert"),               //ATS警報ベル(ジリジリ)
             isAtsFault: dm.getBoolean("ATS-Ps_isAtsFault"),                 //Ps故障
@@ -175,17 +175,15 @@ ATS_Ps_Display.prototype = {
         //発光パネル
         GLHelper.disableLighting();
         GLHelper.setLightmapMaxBrightness();
-        if (!state.isBrakeDisable) {
+        if (atsType === "ATS-Ps") {
             if (state.isATSBrake) this.parts.directBrake.render(renderer);
+            else if (state.isATSLongBrake) this.parts.rollbackBrake.render(renderer);
             else if (state.isPatternBrake) this.parts.patternOver.render(renderer);
             else if (state.isATSLongBrake) this.parts.longBrake.render(renderer);
-            else if (state.isRollbackBrake) this.parts.rollbackBrake.render(renderer);
             else this.parts.normal.render(renderer);
-        }
-
-        if (atsType === "ATS-Ps") {
             if (state.isPatternApproaching) this.parts.pattern.render(renderer);
-            if (state.isATSBrake) this.parts.brake.render(renderer);
+            var isATSBrake = state.isATSBrake || state.isATSLongBrake || state.isPatternBrake || state.isATSLongBrake;
+            if (isATSBrake) this.parts.brake.render(renderer);
             if (state.isBrakeDisable) this.parts.disable.render(renderer);
             if (state.hasPattern) this.parts.patternPs.render(renderer);
             if (state.isAtsFault) this.parts.failurePs.render(renderer);

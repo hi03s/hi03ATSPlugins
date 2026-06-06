@@ -1,10 +1,16 @@
-//#################################
+﻿//#################################
 //##                             ##
 //##  hi03 ATS-Pプラグイン v1.0   ##
 //##                             ##
 //#################################
 function operationATS_P_East(entity, currentATSType, options) {
     if (!entity) return;
+    if (!options) options = {
+        MaxBrakeNotch: -8,
+        BrakeDeceleration: -2.5,
+        MaxSpeed: 130,
+        IsOldType: false
+    }
 
     //##  オプション  ##
     //非常ブレーキのノッチ
@@ -78,7 +84,7 @@ function operationATS_P_East(entity, currentATSType, options) {
             //-- ATS-P機能 --
             _fx.setBooleanSync(dataMap, "ATS-P_East_isActiveATSP", false);
             _fx.setStringSync(dataMap, "ATS-P_East_ATSPMode", "");
-            _fx.setDoubleSync(dataMap, "ATS-P_East_PatternSpeed", 0);
+            _fx.setDoubleSync(dataMap, "ATS-P_East_patternSpeed", 0);
             _fx.setBooleanSync(dataMap, "ATS-P_East_isPatternBrake", false);
             _fx.setBooleanSync(dataMap, "ATS-P_East_patternAlert", false);
             _fx.setBooleanSync(dataMap, "ATS-P_East_isPatternBrakeFull", false);
@@ -148,6 +154,9 @@ function operationATS_P_East(entity, currentATSType, options) {
                 isActiveATSP = true;
             }
 
+            //ATS故障
+            _fx.setBooleanSync(dataMap, "ATS-P_East_isAtsFault", Boolean(receiveData.isFault));
+
             //-- ATS-Sx機能 --
             if ((ATSPMode === "East" && !isActiveATSP) || ATSPMode === "West") {//東モード:ATS-P動作時はSx無効、西モード:ATS-P・Sx併用
                 //即時停止
@@ -164,18 +173,6 @@ function operationATS_P_East(entity, currentATSType, options) {
                     atsState.alertCount = 5 * 20;//5秒
                     _fx.setBooleanSync(dataMap, "ATS-P_East_isLongAlertLatched", true);//警報持続ボタンで解除
                     _fx.setIntSync(dataMap, "ATS-P_East_longAlertTick", worldTick);
-                }
-
-                //ATS故障
-                _fx.setBooleanSync(dataMap, "ATS-P_East_isAtsFault", Boolean(receiveData.isFault));
-
-                //ATS切り替え受信
-                if (receiveData.switch) {
-                    //ATS-P切り替え(西モード)
-                    if (receiveData.switch === "EtoW") {
-                        _fx.setStringSync(dataMap, "ATS-P_East_ATSPMode", "West");
-                        _fx.setBooleanSync(dataMap, "ATS-P_East_isActiveATSP", true);
-                    }
                 }
             }
 
@@ -199,30 +196,30 @@ function operationATS_P_East(entity, currentATSType, options) {
 
                 //入換パターン終了
                 if (receiveData.releaseShunting) atsState.pattern["Shunting"] = null;
+            }
 
-                //ATS切り替え受信
-                if (receiveData.switch) {
-                    //ATS-P終了
-                    if (receiveData.switch === "End") {
-                        _fx.setBooleanSync(dataMap, "ATS-P_East_isActiveATSP", false);
-                        atsState.pattern = {};
-                        if (IsOldType) {
-                            _fx.setIntSync(dataMap, ats_id + "_lastTick", 0);
-                            _fx.setBooleanSync(dataMap, ats_id + "_isInitialize", true);
-                        }
+            //ATS切り替え受信
+            if (receiveData.switch) {
+                //ATS-P終了
+                if (receiveData.switch === "End") {
+                    _fx.setBooleanSync(dataMap, "ATS-P_East_isActiveATSP", false);
+                    atsState.pattern = {};
+                    if (IsOldType) {
+                        _fx.setIntSync(dataMap, ats_id + "_lastTick", 0);
+                        _fx.setBooleanSync(dataMap, ats_id + "_isInitialize", true);
                     }
+                }
 
-                    //ATS-P切り替え(西モード)
-                    else if (receiveData.switch === "EtoW") {
-                        _fx.setStringSync(dataMap, "ATS-P_East_ATSPMode", "West");
-                        _fx.setBooleanSync(dataMap, "ATS-P_East_isActiveATSP", true);
-                    }
+                //ATS-P切り替え(西モード)
+                else if (receiveData.switch === "EtoW") {
+                    _fx.setStringSync(dataMap, "ATS-P_East_ATSPMode", "West");
+                    _fx.setBooleanSync(dataMap, "ATS-P_East_isActiveATSP", true);
+                }
 
-                    //ATS-P切り替え(東モード)
-                    else if (receiveData.switch === "WtoE") {
-                        _fx.setStringSync(dataMap, "ATS-P_East_ATSPMode", "East");
-                        _fx.setBooleanSync(dataMap, "ATS-P_East_isActiveATSP", true);
-                    }
+                //ATS-P切り替え(東モード)
+                else if (receiveData.switch === "WtoE") {
+                    _fx.setStringSync(dataMap, "ATS-P_East_ATSPMode", "East");
+                    _fx.setBooleanSync(dataMap, "ATS-P_East_isActiveATSP", true);
                 }
             }
 
@@ -238,6 +235,7 @@ function operationATS_P_East(entity, currentATSType, options) {
         var speed = speed_m_tick * 72;//[km/h]
         var absSpeed = Math.abs(speed);
         var speed2 = speed * speed;
+        var MaxSpeed = options.MaxSpeed || 130;
 
         //-- ATS-Sx機能 --
         //ATSブレーキ開放
@@ -271,7 +269,7 @@ function operationATS_P_East(entity, currentATSType, options) {
         _fx.setBooleanSync(dataMap, "ATS-P_East_isLongAlert", atsState.alertCount >= 0);
 
         //-- ATS-P機能 --
-        var patternSpeed = dataMap.getDouble("ATS-P_East_PatternSpeed");
+        var patternSpeed = dataMap.getDouble("ATS-P_East_patternSpeed");
 
         //後退検知
         if (speed <= -7 && entity.getTrainStateData(10) === 0) {
@@ -334,7 +332,7 @@ function operationATS_P_East(entity, currentATSType, options) {
         if (isATSBrakeDisable && absSpeed > 15) entity.setNotch(MaxBrakeNotch);
 
         //パターン情報同期
-        _fx.setDoubleSync(dataMap, "ATS-P_East_PatternSpeed", patternSpeed);
+        _fx.setDoubleSync(dataMap, "ATS-P_East_patternSpeed", patternSpeed);
         if (absSpeed > patternSpeed) {
             if (isFullStop) _fx.setBooleanSync(dataMap, "ATS-P_East_isPatternBrakeFull", true);
             else _fx.setBooleanSync(dataMap, "ATS-P_East_isPatternBrake", true);
@@ -355,7 +353,7 @@ function operationATS_P_East(entity, currentATSType, options) {
     var dataMap = entity.getResourceState().getDataMap();
 
     if (ats_id !== currentATSType) {
-        _ats.off(entity);
+        _ats.off(entity, currentATSType, options);
         _fx.setIntSync(dataMap, ats_id + "_lastTick", 0);
         _fx.setBooleanSync(dataMap, ats_id + "_isInitialize", false);
         _fx.setStringSync(dataMap, ats_id + "_ATSState", "");
@@ -377,7 +375,7 @@ function operationATS_P_East(entity, currentATSType, options) {
     if (isInitialize) {
         var resetTime = IsOldType ? _ats.resetTime_Sx : _ats.resetTime;
         if ((worldTick - lastTick) < resetTime) {//初期化中
-            _ats.reset(entity);
+            _ats.reset(entity, options);
         }
         else {//初期化完了
             _fx.setBooleanSync(dataMap, ats_id + "_isInitialize", false);
@@ -391,7 +389,7 @@ function operationATS_P_East(entity, currentATSType, options) {
         else atsState = JSON.parse(operationATS_P_East._ats.atsState);
 
         //atsState更新
-        atsState = _ats.onUpdate(entity, atsState);
+        atsState = _ats.onUpdate(entity, atsState, options);
 
         //データ受信
         var receiveDataJson = dataMap.getString("ATSDataReceive").replace(/☆/g, ",");
@@ -405,13 +403,13 @@ function operationATS_P_East(entity, currentATSType, options) {
                     isFault: true
                 };
             }
-            atsState = _ats.receiveData(entity, atsState, receiveData);
+            atsState = _ats.receiveData(entity, atsState, receiveData, options);
             //受信データ消去
             dataMap.setString("ATSDataReceive", "", 1);
         }
 
         //動作処理
-        atsState = _ats.operation(entity, atsState);
+        atsState = _ats.operation(entity, atsState, options);
 
         //保存
         var saveDataJson = JSON.stringify(atsState).replace(/,/g, "☆");

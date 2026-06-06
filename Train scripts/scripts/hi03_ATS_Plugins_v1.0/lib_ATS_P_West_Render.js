@@ -1,4 +1,4 @@
-//#####################################
+﻿//#####################################
 //##                                 ##
 //##  hi03 ATS-P・SWプラグイン v1.0   ##
 //##                                 ##
@@ -43,8 +43,8 @@ var ATS_P_West_State = function (options) {
         meter2: renderer.registerParts(new Parts("ATS-Ps_meter2"))
     }
 }
-ATS_P_West_Display.prototype = {
-    constructor: ATS_P_West_Display,
+ATS_P_West_State.prototype = {
+    constructor: ATS_P_West_State,
     onUpdate: function (entity, pass) {
         var ats_id = "ATS-P_West";
 
@@ -142,7 +142,7 @@ ATS_P_West_Display.prototype = {
             isPatternBrakeFull: dm.getBoolean("ATS-P_West_isPatternBrakeFull"), //ATSブレーキ:パターン抵触
             isATSLongBrake: dm.getBoolean("ATS-P_West_isATSLongBrake"),         //ATSブレーキ:Sn未確認
             isRollbackBrake: dm.getBoolean("ATS-P_West_isRollbackBrake"),       //ATSブレーキ:後退検知
-            patternSpeed: dm.getDouble("ATS-P_West_PatternSpeed"),              //パターン速度
+            patternSpeed: dm.getDouble("ATS-P_West_patternSpeed"),              //パターン速度
             isPatternApproaching: dm.getBoolean("ATS-P_West_patternAlert"),     //パターン接近
             isLongAlert: dm.getBoolean("ATS-P_West_isLongAlert"),               //ATS警報ベル(ジリジリ)
             isAtsFault: dm.getBoolean("ATS-P_West_isAtsFault"),                 //P故障
@@ -182,18 +182,20 @@ ATS_P_West_Display.prototype = {
         //発光パネル
         GLHelper.disableLighting();
         GLHelper.setLightmapMaxBrightness();
-        if (!state.isBrakeDisable) {
+        if (atsType === "ATS-P_East" || atsType === "ATS-P_West") {
             if (state.isATSBrake) this.parts.directBrake.render(renderer);
+            else if (state.isATSLongBrake) this.parts.rollbackBrake.render(renderer);
             else if (state.isPatternBrake || state.isPatternBrakeFull) this.parts.patternOver.render(renderer);
             else if (state.isATSLongBrake) this.parts.longBrake.render(renderer);
             else this.parts.normal.render(renderer);
-        }
-
-        if (atsType === "ATS-P_East" || atsType === "ATS-P_West") {
+            this.parts.powerP.render(renderer);
             if (state.isPatternApproaching) this.parts.pattern.render(renderer);
-            if (state.isATSBrake) this.parts.brake.render(renderer);
+            var isATSBrake = state.isATSBrake || state.isATSLongBrake || state.isPatternBrake || state.isPatternBrakeFull || state.isATSLongBrake;
+            if (isATSBrake) this.parts.brake.render(renderer);
             if (state.isBrakeDisable) this.parts.disable.render(renderer);
-            if (state.isAtsFault) this.parts.failurePs.render(renderer);
+            if (state.isActiveATSP) this.parts.patternP.render(renderer);
+            if (state.isInitialize || (state.isAtsFault && state.isActiveATSP)) this.parts.failureP.render(renderer);
+            if (state.isInitialize || (state.isAtsFault && !state.isActiveATSP)) this.parts.failurePs.render(renderer);
             for (var i = 0; i < 80; i++) {
                 var partSpd = i * (140 / 79);
                 GL11.glPushMatrix();
