@@ -35,12 +35,14 @@
 
 #### 地上子の設置方法
 地上子の種類によって以下のように配置します。
-<img width="987" height="798" alt="how to setting(ATS-Sx)" src="https://github.com/user-attachments/assets/61266b3a-463e-462e-ab1c-a1781254ca9a" />
+<img width="987" height="798" alt="how to setting(ATS-Sx)" src="https://github.com/user-attachments/assets/61266b3a-463e-462e-ab1c-a1781254ca9a" />  
 また、地上子の直下にコマンドブロックを設置します。内容は以下によります。  
 ```javascript
 //・直下地上子、ロング地上子、パターン地上子、誤出発防止地上子
 {
-    "signal": [[x, y, z],...]   //必須 / 連動する信号機 (nullを渡した場合は終端/赤現示固定)
+    "signal": [[x, y, z],...],  //必須 / 連動する信号機 (nullを渡した場合は終端/赤現示固定)
+    "branchPos": [x, y, z],     //任意 / 分岐を制御するRSブロックの座標(分岐器がある場合)
+    "dir": true                 //任意 / 機能を有効とするときの分岐器の向き true:RSがONのとき、false:RSがOFFのとき
 }
 
 //・速度制限地上子
@@ -84,14 +86,16 @@
 
 #### 地上子の設置方法
 地上子の種類によって以下のように配置します。
-<img width="1920" height="1080" alt="how to setting" src="https://github.com/user-attachments/assets/950ea52f-cee4-49ab-8c2a-6c1ddb77019e" />
+<img width="1920" height="1080" alt="how to setting" src="https://github.com/user-attachments/assets/950ea52f-cee4-49ab-8c2a-6c1ddb77019e" />  
 また、地上子の直下にコマンドブロックを設置します。内容は以下によります。  
 ```javascript
 //・直下地上子、ロング地上子、パターン地上子、誤出発防止地上子、誘導パターン地上子、入換パターン地上子
 {
     "signal": [[x, y, z],...],  //必須 / 連動する信号機 (nullを渡した場合は終端/赤現示固定)
     "speed" : speed,            //任意 / パターン下限速度[km/h](パターン地上子のみ)
-    "distance": distance        //任意 / 停止点までの距離[m]
+    "distance": distance,       //任意 / 停止点までの距離[m]
+    "branchPos": [x, y, z],     //任意 / 分岐を制御するRSブロックの座標(分岐器がある場合)
+    "dir": true                 //任意 / 機能を有効とするときの分岐器の向き true:RSがONのとき、false:RSがOFFのとき
 }
 
 //・誤出発防止ﾀｲﾏｰ起動地上子
@@ -145,7 +149,9 @@
 {
     "id": id,                   //必須 / パターンID 同じ信号機を指定する[直下地上子/パターン地上子/パターン取消地上子]で同じIDを設定してください(前後の閉塞の地上子とIDが被らなければ同じIDを使用しても大丈夫です)
     "signal": [[x, y, z],...]   //必須 / 連動する信号機 (nullを渡した場合は終端/赤現示固定)
-    "distance": distance        //任意 / 停止点までの距離[m]
+    "distance": distance,       //任意 / 停止点までの距離[m]
+    "branchPos": [x, y, z],     //任意 / 分岐を制御するRSブロックの座標(分岐器がある場合)
+    "dir": true                 //任意 / 機能を有効とするときの分岐器の向き true:RSがONのとき、false:RSがOFFのとき
 }
 
 //・誘導パターン地上子、入換パターン地上子
