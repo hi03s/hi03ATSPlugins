@@ -31,7 +31,9 @@ var Blocks = {
 {
     "signal": [[x, y, z],...],  必須 / 連動する信号機 (nullを渡した場合は終端/赤現示固定)
     "speed" : speed,            任意 / パターン下限速度[km/h](パターン地上子のみ)
-    "distance": distance        任意 / 停止点までの距離[m]
+    "distance": distance,       任意 / 停止点までの距離[m]
+    "branchPos": [x, y, z],     任意 / 分岐を制御するRSブロックの座標(分岐器がある場合)
+    "dir": true                 任意 / 機能を有効とするときの分岐器の向き true:RSがONのとき、false:RSがOFFのとき
 }
 
 ・誤出発防止ﾀｲﾏｰ起動地上子
@@ -98,9 +100,6 @@ function onUpdate(entity, scriptExecuter) {
     }
     if (!settings) return;
 
-    //RSブロック検知
-    if (getBlock(world, x, y - 2, z) === Blocks.RedstoneBlock) return;
-
     //車両の検知 指向性あり
     var collideTrain = getCollideTrain(entity, world, x, y, z);
     if (collideTrain) {
@@ -148,11 +147,11 @@ function onUpdate(entity, scriptExecuter) {
                 }
             }
             if (Options.speed.indexOf(modelName) !== -1) limitSpeed = settings.speed;
-            if (Options.branchPos.indexOf(modelName) !== -1) branchPos = settings.branchPos;
-            if (Options.dir.indexOf(modelName) !== -1) branchDir = settings.dir;
             if (Options.time.indexOf(modelName) !== -1) time = settings.time ? settings.time : 90;
             if (settings.distance !== undefined) distance = settings.distance;
             if (settings.limitLength !== undefined) limitLength = settings.limitLength;
+            if (settings.branchPos !== undefined) branchPos = settings.branchPos;
+            if (settings.dir !== undefined) dir = settings.dir;
 
             //送信情報
             var sendData = getSendData(world, modelName, signalLevel, limitSpeed, branchPos, branchDir, time, distance, limitLength);
@@ -310,98 +309,122 @@ function fixedYawDiff(yaw1, yaw2) {
 function getSendData(world, modelName, signalLevel, limitSpeed, branchPos, branchDir, time, distance, limitLength) {
     var sendData = {};
 
+    var isIgnore = false;
+    if (branchPos) {
+        var block = getBlock(world, branchPos[0], branchPos[1], branchPos[2]);
+        isIgnore = (branchDir && block !== Blocks.RedstoneBlock) || (!branchDir && block === Blocks.RedstoneBlock);
+    }
+
     //直下地上子
     if (modelName === "hi03ATS_Ps_Directory1") {
-        if (signalLevel === 1) {
-            //即時停止 & くぐり抜けパターン
-            sendData.stop1 = true;
-            sendData.pattern1 = 15;
-            sendData.distance1 = 0;
+        if (!isIgnore) {
+            if (signalLevel === 1) {
+                //即時停止 & くぐり抜けパターン
+                sendData.stop1 = true;
+                sendData.pattern1 = 15;
+                sendData.distance1 = 0;
+            }
+            else {
+                sendData.pattern1 = null;//パターン消去
+                sendData.distance1 = null;
+            }
+            sendData.isShunting = false;
         }
-        else {
-            sendData.pattern1 = null;//パターン消去
-            sendData.distance1 = null;
-        }
-        sendData.isShunting = false;
     }
 
     //直下地上子(副)
     else if (modelName === "hi03ATS_Ps_Directory2") {
-        if (signalLevel === 1) {
-            sendData.stop1 = true;//即時停止
-            sendData.pattern2 = 15;
-            sendData.distance2 = 0;
+        if (!isIgnore) {
+            if (signalLevel === 1) {
+                sendData.stop1 = true;//即時停止
+                sendData.pattern2 = 15;
+                sendData.distance2 = 0;
+            }
+            else {
+                sendData.pattern2 = null;//パターン消去
+                sendData.distance2 = null;
+            }
+            sendData.isShunting = false;
         }
-        else {
-            sendData.pattern2 = null;//パターン消去
-            sendData.distance2 = null;
-        }
-        sendData.isShunting = false;
     }
 
     //ロング地上子
     else if (modelName === "hi03ATS_Ps_Long") {
-        if (signalLevel === 1) sendData.alert = true;//警報
-        //自動運転用の付加情報(信号機までの距離や信号レベル)を送信する
-        sendData.info = {
-            "signalLevel": signalLevel,
-            "distance": (distance ? distance : 600) - 20 //600m - 方外20m
+        if (!isIgnore) {
+            if (signalLevel === 1) sendData.alert = true;//警報
+            //自動運転用の付加情報(信号機までの距離や信号レベル)を送信する
+            sendData.info = {
+                "signalLevel": signalLevel,
+                "distance": (distance ? distance : 600) - 20 //600m - 方外20m
+            }
         }
     }
 
     //第1ﾊﾟﾀｰﾝ地上子
     else if (modelName === "hi03ATS_Ps_Pattern1") {
-        if (signalLevel === 1) {//パターン発生
-            sendData.pattern1 = 65;
-            sendData.distance1 = distance ? distance : 644;//655m - 11m
+        if (!isIgnore) {
+            if (signalLevel === 1) {//パターン発生
+                sendData.pattern1 = 65;
+                sendData.distance1 = distance ? distance : 644;//655m - 11m
+            }
         }
     }
 
     //第2ﾊﾟﾀｰﾝ地上子
     else if (modelName === "hi03ATS_Ps_Pattern2") {
-        if (signalLevel === 1) {//パターン発生
-            sendData.pattern1 = 10;
-            sendData.distance1 = distance ? distance : 379;//390m - 11m
-        }
-        else {//パターン消去
-            sendData.pattern1 = null;
-            sendData.distance1 = null;
-            sendData.isShunting = false;
+        if (!isIgnore) {
+            if (signalLevel === 1) {//パターン発生
+                sendData.pattern1 = 10;
+                sendData.distance1 = distance ? distance : 379;//390m - 11m
+            }
+            else {//パターン消去
+                sendData.pattern1 = null;
+                sendData.distance1 = null;
+                sendData.isShunting = false;
+            }
         }
     }
 
     //第2ﾊﾟﾀｰﾝ地上子(副)
     else if (modelName === "hi03ATS_Ps_Pattern3") {
-        if (signalLevel === 1) {//パターン発生
-            sendData.pattern2 = 10;
-            sendData.distance2 = distance ? distance : 379;//390m - 11m
-        }
-        else {//パターン消去
-            sendData.pattern2 = null;
-            sendData.distance2 = null;
-            sendData.isShunting = false;
+        if (!isIgnore) {
+            if (signalLevel === 1) {//パターン発生
+                sendData.pattern2 = 10;
+                sendData.distance2 = distance ? distance : 379;//390m - 11m
+            }
+            else {//パターン消去
+                sendData.pattern2 = null;
+                sendData.distance2 = null;
+                sendData.isShunting = false;
+            }
         }
     }
 
     //誘導ﾊﾟﾀｰﾝ地上子
     else if (modelName === "hi03ATS_Ps_PatternCallOn") {
-        if (signalLevel !== 1) sendData.isCallOn = true;//誘導モード
+        if (!isIgnore) {
+            if (signalLevel !== 1) sendData.isCallOn = true;//誘導モード
+        }
     }
 
     //入換ﾊﾟﾀｰﾝ地上子
     else if (modelName === "hi03ATS_Ps_PatternShunting") {
-        if (signalLevel === 1) sendData.isShunting = true;//入換モード
+        if (!isIgnore) {
+            if (signalLevel === 1) sendData.isShunting = true;//入換モード
+        }
     }
 
     //誤出発防止地上子
     else if (modelName === "hi03ATS_Ps_Prevention") {
-        if (signalLevel === 1) sendData.stop2 = true;//即時停止(無効機能付き)
-        else {
-            sendData.isShunting = false;
-            sendData.pattern1 = null;//パターン消去
-            sendData.distance1 = null;
-            sendData.pattern2 = null;
-            sendData.distance2 = null;
+        if (!isIgnore) {
+            if (signalLevel === 1) sendData.stop2 = true;//即時停止(無効機能付き)
+            else {
+                sendData.isShunting = false;
+                sendData.pattern1 = null;//パターン消去
+                sendData.distance1 = null;
+                sendData.pattern2 = null;
+                sendData.distance2 = null;
+            }
         }
     }
 

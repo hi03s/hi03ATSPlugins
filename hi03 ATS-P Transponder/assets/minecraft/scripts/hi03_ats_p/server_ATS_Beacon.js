@@ -30,8 +30,10 @@ var Blocks = {
 ・直下地上子、パターン地上子、パターン取消地上子
 {
     "id": id,                   必須 / パターンID 同じ信号機を指定する[直下地上子/パターン地上子/パターン取消地上子]で同じIDを設定してください(前後の閉塞の地上子とIDが被らなければ同じIDを使用しても大丈夫です)
-    "signal": [[x, y, z],...]   必須 / 連動する信号機 (nullを渡した場合は終端/赤現示固定)
-    "distance": distance        任意 / 停止点までの距離[m]
+    "signal": [[x, y, z],...],  必須 / 連動する信号機 (nullを渡した場合は終端/赤現示固定)
+    "distance": distance,       任意 / 停止点までの距離[m]
+    "branchPos": [x, y, z],     任意 / 分岐を制御するRSブロックの座標(分岐器がある場合)
+    "dir": true                 任意 / 機能を有効とするときの分岐器の向き true:RSがONのとき、false:RSがOFFのとき
 }
 
 ・誘導パターン地上子、入換パターン地上子
@@ -71,13 +73,13 @@ var Options = {//コマブロに必須とする情報のリスト
     "id": [
         "hi03ATS_P_Directory", "hi03ATS_PN_Directory", "hi03ATS_P_PatternBreak", "hi03ATS_PN_PatternBreak",
         "hi03ATS_P_SpeedLimitBranch", "hi03ATS_P_SpeedLimitEnter", "hi03ATS_P_SpeedLimitExit",
-        "hi03ATS_P_Pattern600", "hi03ATS_P_Pattern280","hi03ATS_P_Pattern180","hi03ATS_P_Pattern130","hi03ATS_P_Pattern085", "hi03ATS_P_Pattern050",
-        "hi03ATS_PN_Pattern600", "hi03ATS_PN_Pattern280","hi03ATS_PN_Pattern180","hi03ATS_PN_Pattern130","hi03ATS_PN_Pattern085", "hi03ATS_PN_Pattern050"
+        "hi03ATS_P_Pattern600", "hi03ATS_P_Pattern280", "hi03ATS_P_Pattern180", "hi03ATS_P_Pattern130", "hi03ATS_P_Pattern085", "hi03ATS_P_Pattern050",
+        "hi03ATS_PN_Pattern600", "hi03ATS_PN_Pattern280", "hi03ATS_PN_Pattern180", "hi03ATS_PN_Pattern130", "hi03ATS_PN_Pattern085", "hi03ATS_PN_Pattern050"
     ],
     "signal": [
         "hi03ATS_P_Directory", "hi03ATS_PN_Directory", "hi03ATS_P_PatternBreak", "hi03ATS_PN_PatternBreak",
-        "hi03ATS_P_Pattern600", "hi03ATS_P_Pattern280","hi03ATS_P_Pattern180","hi03ATS_P_Pattern130","hi03ATS_P_Pattern085", "hi03ATS_P_Pattern050",
-        "hi03ATS_PN_Pattern600", "hi03ATS_PN_Pattern280","hi03ATS_PN_Pattern180","hi03ATS_PN_Pattern130","hi03ATS_PN_Pattern085", "hi03ATS_PN_Pattern050",
+        "hi03ATS_P_Pattern600", "hi03ATS_P_Pattern280", "hi03ATS_P_Pattern180", "hi03ATS_P_Pattern130", "hi03ATS_P_Pattern085", "hi03ATS_P_Pattern050",
+        "hi03ATS_PN_Pattern600", "hi03ATS_PN_Pattern280", "hi03ATS_PN_Pattern180", "hi03ATS_PN_Pattern130", "hi03ATS_PN_Pattern085", "hi03ATS_PN_Pattern050",
         "hi03ATS_P_PatternShunting", "hi03ATS_P_PatternCallOn", "hi03ATS_PN_PatternCallOn"
     ],
     "speed": ["hi03ATS_P_SpeedLimitBranch", "hi03ATS_P_SpeedLimitEnter"],
@@ -112,9 +114,6 @@ function onUpdate(entity, scriptExecuter) {
         }
     }
     if (!settings) return;
-
-    //RSブロック検知
-    if (getBlock(world, x, y - 2, z) === Blocks.RedstoneBlock) return;
 
     //車両の検知 指向性あり
     var collideTrain = getCollideTrain(entity, world, x, y, z);
@@ -164,10 +163,10 @@ function onUpdate(entity, scriptExecuter) {
             }
             if (Options.id.indexOf(modelName) !== -1) id = settings.id;
             if (Options.speed.indexOf(modelName) !== -1) limitSpeed = settings.speed;
-            if (Options.branchPos.indexOf(modelName) !== -1) branchPos = settings.branchPos;
-            if (Options.dir.indexOf(modelName) !== -1) branchDir = settings.dir;
             if (settings.distance !== undefined) distance = settings.distance;
             if (settings.length !== undefined) length = settings.length;
+            if (settings.branchPos !== undefined) branchPos = settings.branchPos;
+            if (settings.dir !== undefined) dir = settings.dir;
 
             //送信情報
             var sendData = getSendData(world, modelName, signalLevel, limitSpeed, branchPos, branchDir, distance, id, length);
@@ -299,85 +298,107 @@ function fixedYawDiff(yaw1, yaw2) {
 function getSendData(world, modelName, signalLevel, limitSpeed, branchPos, branchDir, distance, id, length) {
     var sendData = {};
 
+    var isIgnore = false;
+    if (branchPos) {
+        var block = getBlock(world, branchPos[0], branchPos[1], branchPos[2]);
+        isIgnore = (branchDir && block !== Blocks.RedstoneBlock) || (!branchDir && block === Blocks.RedstoneBlock);
+    }
+
     //直下地上子
     if (modelName === "hi03ATS_P_Directory" || modelName === "hi03ATS_PN_Directory") {
-        if (signalLevel === 1) {
-            sendData.stop = true;//即時停止
-            sendData.id = "Directory";
-            sendData.speed = 15;
-            sendData.distance = 0;
-            sendData.length = 80;
+        if (!isIgnore) {
+            if (signalLevel === 1) {
+                sendData.stop = true;//即時停止
+                sendData.id = "Directory";
+                sendData.speed = 15;
+                sendData.distance = 0;
+                sendData.length = 80;
+            }
+            sendData.releaseId = id;
+            sendData.releaseShunting = true;
         }
-        sendData.releaseId = id;
-        sendData.releaseShunting = true;
     }
 
     //パターン地上子
     else if (modelName === "hi03ATS_P_Pattern600" || modelName === "hi03ATS_PN_Pattern600") {
-        if (signalLevel === 1) {
-            sendData.id = id;
-            sendData.speed = 15;
-            sendData.distance = distance ? distance : 600;
-            sendData.length = -1;//-1は無限
+        if (!isIgnore) {
+            if (signalLevel === 1) {
+                sendData.id = id;
+                sendData.speed = 15;
+                sendData.distance = distance ? distance : 600;
+                sendData.length = -1;//-1は無限
+            }
+            else sendData.releaseId = id;
         }
-        else sendData.releaseId = id;
     }
     else if (modelName === "hi03ATS_P_Pattern280" || modelName === "hi03ATS_PN_Pattern280") {
-        if (signalLevel === 1) {
-            sendData.id = id;
-            sendData.speed = 15;
-            sendData.distance = distance ? distance : 280;
-            sendData.length = -1;//-1は無限
+        if (!isIgnore) {
+            if (signalLevel === 1) {
+                sendData.id = id;
+                sendData.speed = 15;
+                sendData.distance = distance ? distance : 280;
+                sendData.length = -1;//-1は無限
+            }
+            else sendData.releaseId = id;
         }
-        else sendData.releaseId = id;
     }
     else if (modelName === "hi03ATS_P_Pattern180" || modelName === "hi03ATS_PN_Pattern180") {
-        if (signalLevel === 1) {
-            sendData.id = id;
-            sendData.speed = 15;
-            sendData.distance = distance ? distance : 180;
-            sendData.length = -1;//-1は無限
+        if (!isIgnore) {
+            if (signalLevel === 1) {
+                sendData.id = id;
+                sendData.speed = 15;
+                sendData.distance = distance ? distance : 180;
+                sendData.length = -1;//-1は無限
+            }
+            else sendData.releaseId = id;
         }
-        else sendData.releaseId = id;
     }
     else if (modelName === "hi03ATS_P_Pattern130" || modelName === "hi03ATS_PN_Pattern130") {
-        if (signalLevel === 1) {
-            sendData.id = id;
-            sendData.speed = 15;
-            sendData.distance = distance ? distance : 130;
-            sendData.length = -1;//-1は無限
+        if (!isIgnore) {
+            if (signalLevel === 1) {
+                sendData.id = id;
+                sendData.speed = 15;
+                sendData.distance = distance ? distance : 130;
+                sendData.length = -1;//-1は無限
+            }
+            else sendData.releaseId = id;
         }
-        else sendData.releaseId = id;
     }
     else if (modelName === "hi03ATS_P_Pattern085" || modelName === "hi03ATS_PN_Pattern085") {
-        if (signalLevel === 1) {
-            sendData.id = id;
-            sendData.speed = 15;
-            sendData.distance = distance ? distance : 85;
-            sendData.length = -1;//-1は無限
+        if (!isIgnore) {
+            if (signalLevel === 1) {
+                sendData.id = id;
+                sendData.speed = 15;
+                sendData.distance = distance ? distance : 85;
+                sendData.length = -1;//-1は無限
+            }
+            else sendData.releaseId = id;
         }
-        else sendData.releaseId = id;
     }
     else if (modelName === "hi03ATS_P_Pattern050" || modelName === "hi03ATS_PN_Pattern050") {
-        if (signalLevel === 1) {
-            sendData.id = id;
-            sendData.speed = 15;
-            sendData.distance = distance ? distance : 50;
-            sendData.length = -1;//-1は無限
+        if (!isIgnore) {
+            if (signalLevel === 1) {
+                sendData.id = id;
+                sendData.speed = 15;
+                sendData.distance = distance ? distance : 50;
+                sendData.length = -1;//-1は無限
+            }
+            else sendData.releaseId = id;
         }
-        else sendData.releaseId = id;
     }
 
     //パターン取消地上子
     else if (modelName === "hi03ATS_P_PatternBreak" || modelName === "hi03ATS_PN_PatternBreak") {
-        if (signalLevel === 1) {
-            sendData.id = id;
-            sendData.speed = 15;
-            sendData.distance = -1;//-1は継続
-            sendData.length = -1;//-1は無限
-        }
-        else {
-            sendData.releaseId = id;
+        if (!isIgnore) {
+            if (signalLevel === 1) {
+                sendData.id = id;
+                sendData.speed = 15;
+                sendData.distance = -1;//-1は継続
+                sendData.length = -1;//-1は無限
+            }
+            else {
+                sendData.releaseId = id;
+            }
         }
     }
 

@@ -27,9 +27,11 @@ var Blocks = {
 }
 
 /*
-・直下地上子、ロング地上子、パターン地上子、誤出発防止地上子
+・直下地上子、ロング地上子、誤出発防止地上子
 {
-    "signal": [[x, y, z],...]   必須 / 連動する信号機 (nullを渡した場合は終端/赤現示固定)
+    "signal": [[x, y, z],...],  必須 / 連動する信号機 (nullを渡した場合は終端/赤現示固定)
+    "branchPos": [x, y, z],     任意 / 分岐を制御するRSブロックの座標(分岐器がある場合)
+    "dir": true                 任意 / 機能を有効とするときの分岐器の向き true:RSがONのとき、false:RSがOFFのとき
 }
 
 ・速度制限地上子
@@ -123,9 +125,9 @@ function onUpdate(entity, scriptExecuter) {
                 }
             }
             if (Options.speed.indexOf(modelName) !== -1) limitSpeed = settings.speed;
-            if (Options.branchPos.indexOf(modelName) !== -1) branchPos = settings.branchPos;
-            if (Options.dir.indexOf(modelName) !== -1) branchDir = settings.dir;
             if (Options.time.indexOf(modelName) !== -1) time = settings.time ? settings.time : 90;
+            if (settings.branchPos !== undefined) branchPos = settings.branchPos;
+            if (settings.dir !== undefined) dir = settings.dir;
 
             //送信情報
             var trainSpeed = collideTrain.getSpeed() * 72;//[km/h]
@@ -283,24 +285,36 @@ function fixedYawDiff(yaw1, yaw2) {
 function getSendData(world, modelName, signalLevel, time, speedLimit, trainSpeed, branchPos, branchDir) {
     var sendData = {};
 
+    var isIgnore = false;
+    if (branchPos) {
+        var block = getBlock(world, branchPos[0], branchPos[1], branchPos[2]);
+        isIgnore = (branchDir && block !== Blocks.RedstoneBlock) || (!branchDir && block === Blocks.RedstoneBlock);
+    }
+
     //直下地上子
     if (modelName === "hi03ATS_Sx_Directory") {
-        if (signalLevel === 1) sendData.stop1 = true;//即時停止
+        if (!isIgnore) {
+            if (signalLevel === 1) sendData.stop1 = true;//即時停止
+        }
     }
 
     //ロング地上子
     else if (modelName === "hi03ATS_Sx_Long") {
-        if (signalLevel === 1) sendData.alert = true;//警報
-        //自動運転用の付加情報(信号機までの距離や信号レベル)を送信する
-        sendData.info = {
-            "signalLevel": signalLevel,
-            "distance": 600 - 20 //600m - 方外20m
+        if (!isIgnore) {
+            if (signalLevel === 1) sendData.alert = true;//警報
+            //自動運転用の付加情報(信号機までの距離や信号レベル)を送信する
+            sendData.info = {
+                "signalLevel": signalLevel,
+                "distance": 600 - 20 //600m - 方外20m
+            }
         }
     }
 
     //誤出発防止地上子
     else if (modelName === "hi03ATS_Sx_Prevention") {
-        if (signalLevel === 1) sendData.stop2 = true;//即時停止(無効機能付き)
+        if (!isIgnore) {
+            if (signalLevel === 1) sendData.stop2 = true;//即時停止(無効機能付き)
+        }
     }
 
     //誤出発防止ﾀｲﾏｰ起動地上子
